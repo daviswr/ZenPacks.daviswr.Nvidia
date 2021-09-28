@@ -1,0 +1,198 @@
+name: ZenPacks.daviswr.Nvidia
+
+class_relationships:
+  - Products.ZenModel.Device.Device(nvidiaGPUs) 1:MC NvidiaGPU(server)
+
+classes:
+  NvidiaGPU:
+    base: [zenpacklib.Component]
+    label: Nvidia GPU
+    short_label: NvGPU
+    monitoring_templates:
+      - Nvidia GPU
+    properties:
+      DEFAULTS:
+        type: string
+        grid_display: false
+        details_display: true
+
+      compute_mode:
+        label: Compute Mode
+        order: 20
+
+      driver_version:
+        label: Driver Version
+        order: 22
+
+      gpu_name:
+        label: Product Name
+        grid_display: false
+        label_width: 150
+        content_width: 150
+        order: 10
+
+      index:
+        type: int
+        label: Index
+        details_display: false
+
+      memory_used:
+        type: int
+        label: Used Memory
+        short_label: Used Mem
+        renderer: Zenoss.render.bytesString
+        grid_display: true
+        datapoint: nvidia-smi_memory_used
+        label_width: 55
+        content_width: 55
+        order: 13
+
+      memory_total:
+        type: int
+        label: Total Memory
+        short_label: Memory
+        renderer: Zenoss.render.bytesString
+        grid_display: true
+        label_width: 55
+        content_width: 55
+        order: 12
+
+      power_limit:
+        type: int
+        label: Power Limit
+        short_label: Limit
+        order: 15
+
+      power_management:
+        type: boolean
+        label: Power Management
+        short_label: Power Mgmt
+        enum:
+          true: "clear"
+          false: "debug"
+        renderer: Zenoss.render.severity
+        grid_display: true
+        details_display: false
+        label_width: 60
+        content_width: 60
+        order: 14
+
+      serial:
+        label: Serial Number
+        grid_display: true
+        label_width: 90
+        content_width: 90
+        order: 11
+
+      vbios_version:
+        label: VBIOS Version
+        order: 21
+
+
+device_classes:
+  /:
+    remove: false
+    templates:
+      Nvidia GPU:
+        targetPythonClass: ZenPacks.daviswr.Nvidia.NvidiaGPU
+        datasources:
+          nvidia-smi:
+            type: COMMAND
+            usessh: true
+            cycletime: 60
+            component: "${here/id}"
+            parser: ZenPacks.daviswr.Nvidia.parsers.smi
+            commandTemplate: |-
+              $$ZENOTHING
+              nvidia-smi --format=csv --query-gpu=\
+              serial,\
+              fan.speed,\
+              memory.used,\
+              power.draw,\
+              temperature.gpu,\
+              utilization.gpu,\
+              utilization.memory
+              nvidia-smi | grep --only-matching --null-data "+-.*"
+            datapoints:
+              fan_speed: GAUGE
+              memory_used: GAUGE
+              power_draw: GAUGE
+              temperature_gpu: GAUGE
+              utilization_gpu: GAUGE
+              utilization_memory: GAUGE
+              proc_count: GAUGE
+              proc_memory: GAUGE
+
+        graphs:
+          Utilization:
+            units: percentage
+            miny: 0
+            maxy: 100
+            graphpoints:
+              DEFAULTS:
+                lineType: LINE
+                lineWidth: 2
+              GPU:
+                dpName: nvidia-smi_utilization_gpu
+                colorindex: 0
+              Memory:
+                dpName: nvidia-smi_utilization_memory
+                colorindex: 1
+          Memory:
+            units: bytes
+            base: true
+            miny: 0
+            graphpoints:
+              DEFAULTS:
+                lineType: AREA
+                stacked: true
+              Used:
+                dpName: nvidia-smi_memory_used
+                colorindex: 0
+              Free:
+                dpName: nvidia-smi_memory_used
+                rpn: "-1,*,${here/memory_total},+"
+                color: cccccc
+              Processes:
+                dpName: nvidia-smi_proc_memory
+                lineType: LINE
+                stacked: false
+                colorindex: 1
+          Processes:
+            units: processes
+            miny: 0
+            maxy: 100
+            graphpoints:
+              Processes:
+                dpName: nvidia-smi_proc_count
+                lineType: LINE
+                lineWidth: 2
+                colorindex: 0
+          Power:
+            units: watts
+            miny: 0
+            graphpoints:
+              DEFAULTS:
+                lineType: LINE
+              Drawn:
+                dpName: nvidia-smi_power_draw
+                lineWidth: 2
+                colorindex: 0
+          Fan:
+            units: percentage
+            miny: 0
+            maxy: 100
+            graphpoints:
+              Speed:
+                dpName: nvidia-smi_fan_speed
+                lineType: LINE
+                lineWidth: 2
+                colorindex: 0
+          Temperature:
+            units: deg. C
+            graphpoints:
+              Degrees:
+                dpName: nvidia-smi_temperature_gpu
+                lineType: LINE
+                lineWidth: 2
+                colorindex: 0
