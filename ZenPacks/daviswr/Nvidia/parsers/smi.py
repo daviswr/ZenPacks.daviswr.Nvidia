@@ -61,9 +61,9 @@ class smi(CommandParser):
         for match in re.findall(proc_re, proc_data):
             gpu_id, mem, unit = match
             if gpu_id in gpu_comp_ids:
-                component = components[gpu_comp_ids[gpu_id]]
-                component['proc_memory'] += get_unit_value(mem, unit)
-                component['proc_count'] += 1
+                comp_id = gpu_comp_ids[gpu_id]
+                components[comp_id]['proc_memory'] += get_unit_value(mem, unit)
+                components[comp_id]['proc_count'] += 1
 
         for point in cmd.points:
             if point.component in components:
