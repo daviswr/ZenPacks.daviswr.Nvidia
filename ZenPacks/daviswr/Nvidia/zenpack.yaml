@@ -105,6 +105,7 @@ device_classes:
             commandTemplate: |-
               $$ZENOTHING
               nvidia-smi --format=csv --query-gpu=\
+              index,\
               serial,\
               fan.speed,\
               memory.used,\

@@ -60,8 +60,8 @@ class smi(CommandParser):
         proc_re = r'\|\s+(?P<id>\d+)\s+.*?(?P<mem>\d+)(?P<unit>\w?i?B)\s+\|[\r\n]'  # noqa
         for match in re.findall(proc_re, proc_data):
             gpu_id, mem, unit = match
-            if gpu_id in gpu_comp_ids:
-                comp_id = gpu_comp_ids[gpu_id]
+            if gpu_id.isdigit() and int(gpu_id) in gpu_comp_ids:
+                comp_id = gpu_comp_ids[int(gpu_id)]
                 components[comp_id]['proc_memory'] += get_unit_value(mem, unit)
                 components[comp_id]['proc_count'] += 1
 
